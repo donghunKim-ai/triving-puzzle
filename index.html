@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Triving 퍼즐 주문</title>
+<link rel="stylesheet" href="fonts/pretendard.css">
+<style>
+  :root {
+    --accent: #ec008c;
+    --accent-press: #c80077;
+    --accent-soft: #fde6f3;
+    --ink: #222222;
+    --body: #3f3f3f;
+    --muted: #6a6a6a;
+    --muted-soft: #929292;
+    --hairline: #dddddd;
+    --hairline-soft: #ebebeb;
+    --surface-soft: #f7f7f7;
+    --canvas: #ffffff;
+    --error: #c13515;
+    --shadow: 0 0 0 1px rgba(0,0,0,.02), 0 2px 6px rgba(0,0,0,.04), 0 4px 8px rgba(0,0,0,.1);
+    --r-sm: 8px;
+    --r-md: 14px;
+    --r-full: 9999px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 180px; }
+
+  /* Header */
+  .top { display: flex; align-items: center; justify-content: space-between; height: 64px; border-bottom: 1px solid var(--hairline-soft); margin: 0 -16px; padding: 0 16px; position: sticky; top: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); z-index: 10; }
+  .logo { width: 94px; height: 28px; overflow: hidden; position: relative; }
+  .logo img { position: absolute; width: 131px; left: -19px; top: -25px; }
+  .top .tag { font-size: 13px; color: var(--muted); }
+
+  .hero { padding: 32px 0 8px; }
+  .hero h1 { font-size: 28px; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .hero p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  section { padding: 32px 0 8px; }
+  .sec-title { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 16px; }
+  .sec-title h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .sec-title span { font-size: 13px; color: var(--muted); }
+  .divider { height: 1px; background: var(--hairline-soft); margin: 24px 0 0; }
+
+  /* Product rows */
+  .group-label { font-size: 13px; font-weight: 600; color: var(--muted); margin: 20px 0 8px; }
+  .group-label:first-of-type { margin-top: 0; }
+  .item { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); margin-bottom: 10px; transition: border-color .15s, box-shadow .15s; }
+  .item.on { border-color: var(--ink); box-shadow: var(--shadow); }
+  .item .info { flex: 1; min-width: 0; }
+  .item .name { font-size: 16px; font-weight: 600; line-height: 1.35; }
+  .item .meta { margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; color: var(--body); }
+  .item .price { font-weight: 500; color: var(--ink); }
+  .item .orig { color: var(--muted-soft); text-decoration: line-through; font-size: 13px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; line-height: 1.5; }
+
+  .stepper { display: flex; align-items: center; border: 1px solid var(--hairline); border-radius: var(--r-full); height: 40px; flex-shrink: 0; }
+  .stepper button { width: 40px; height: 38px; border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: var(--ink); border-radius: var(--r-full); display: grid; place-items: center; }
+  .stepper button:disabled { color: var(--hairline); cursor: default; }
+  .stepper button:not(:disabled):active { background: var(--surface-soft); }
+  .stepper input { width: 40px; height: 38px; border: 0; text-align: center; font-weight: 600; font-size: 16px; background: none; -moz-appearance: textfield; padding: 0; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input:focus { outline: none; }
+
+  /* Fields */
+  .field { margin-bottom: 14px; }
+  .field label.l { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .field label.l .req { color: var(--accent); margin-left: 2px; }
+  .input { width: 100%; height: 56px; padding: 14px 12px; border: 1px solid var(--hairline); border-radius: var(--r-sm); background: var(--canvas); font-size: 16px; }
+  textarea.input { height: auto; min-height: 96px; resize: vertical; line-height: 1.5; }
+  .input::placeholder { color: var(--muted-soft); }
+  .input:focus { outline: none; border: 2px solid var(--ink); padding: 13px 11px; }
+  .field.err .input { border-color: var(--error); }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .errmsg { font-size: 13px; color: var(--error); margin-top: 6px; display: none; }
+  .field.err .errmsg, .block.err .errmsg { display: block; }
+
+  /* Choice chips */
+  .chips { display: grid; gap: 8px; grid-template-columns: repeat(var(--cols, 2), 1fr); }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .chip label { display: flex; flex-direction: column; justify-content: center; min-height: 56px; padding: 10px 14px; border: 1px solid var(--hairline); border-radius: var(--r-sm); cursor: pointer; font-size: 15px; font-weight: 500; transition: border-color .15s, background .15s; }
+  .chip label small { font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+  .chip input:checked + label { border: 2px solid var(--ink); padding: 9px 13px; background: var(--surface-soft); }
+  .chip input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .reveal { display: none; margin-top: 12px; }
+  .reveal.show { display: block; }
+  .note { background: var(--surface-soft); border-radius: var(--r-sm); padding: 14px 16px; font-size: 14px; color: var(--body); }
+  .note b { color: var(--ink); }
+
+  .ship-progress { margin-top: 12px; }
+  .bar { height: 6px; border-radius: var(--r-full); background: var(--hairline-soft); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+  .ship-progress p { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+  .consent { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); cursor: pointer; }
+  .consent input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--ink); flex-shrink: 0; }
+  .consent .t { font-size: 15px; font-weight: 500; }
+  .consent .d { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
+  .block.err .consent { border-color: var(--error); }
+
+  /* Bottom bar */
+  .bottom { position: fixed; left: 0; right: 0; bottom: 0; background: var(--canvas); border-top: 1px solid var(--hairline-soft); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 20; }
+  .bottom .in { max-width: 528px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+  .sum { flex: 1; min-width: 0; }
+  .sum .total { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .sum .sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cta { height: 52px; padding: 0 28px; border: 0; border-radius: var(--r-sm); background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+  .cta:active { background: var(--accent-press); }
+  .cta:disabled { background: #ffd1e8; cursor: default; }
+
+  /* Done screen */
+  .done { display: none; padding: 56px 0 40px; text-align: center; }
+  .done.show { display: block; }
+  .done .check { width: 64px; height: 64px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; margin: 0 auto 20px; font-size: 30px; }
+  .done .order-no { display: inline-block; padding: 6px 14px; border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 15px; margin-bottom: 12px; letter-spacing: .02em; }
+  .done h1 { font-size: 24px; margin: 0 0 8px; }
+  .done > p { color: var(--muted); margin: 0 0 28px; }
+  .receipt { text-align: left; border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 20px; }
+  .receipt .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 4px 0; }
+  .receipt .row span:first-child { color: var(--body); }
+  .receipt .row.total { border-top: 1px solid var(--hairline-soft); margin-top: 10px; padding-top: 14px; font-weight: 700; font-size: 18px; }
+  .receipt .row.total span:first-child { color: var(--ink); }
+  .done .note { margin-top: 16px; text-align: left; }
+  .ghost { margin-top: 24px; height: 48px; padding: 0 24px; border: 1px solid var(--ink); background: var(--canvas); border-radius: var(--r-sm); font-weight: 500; cursor: pointer; }
+
+  /* Bulk / extra request */
+  .extra { margin-top: 20px; border: 1px dashed var(--border-strong, #c1c1c1); border-radius: var(--r-md); }
+  .extra.open { border-style: solid; border-color: var(--ink); }
+  .extra-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; background: none; border: 0; text-align: left; cursor: pointer; }
+  .extra-title { display: block; font-size: 16px; font-weight: 600; }
+  .extra-desc { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .plus { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-soft); display: grid; place-items: center; font-size: 20px; flex-shrink: 0; transition: transform .2s; }
+  .extra.open .plus { transform: rotate(45deg); }
+  .extra-body { display: none; padding: 0 16px 16px; }
+  .extra.open .extra-body { display: block; }
+
+  /* Address */
+  .zip-row { display: flex; gap: 8px; }
+  .zip-row .input { flex: 1; min-width: 0; }
+  .zip-btn { height: 56px; padding: 0 18px; border: 1px solid var(--ink); background: var(--canvas); border-radius: var(--r-sm); font-weight: 500; cursor: pointer; flex-shrink: 0; }
+  .zip-btn:active { background: var(--surface-soft); }
+  .postcode { display: none; position: relative; height: 420px; margin-top: 8px; border: 1px solid var(--hairline); border-radius: var(--r-sm); overflow: hidden; }
+  .postcode.show { display: block; }
+  .same { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; font-size: 15px; cursor: pointer; }
+  .same input { width: 20px; height: 20px; margin: 0; accent-color: var(--ink); }
+
+  #summary .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 8px 0; }
+  #summary .row.memo span:last-child { color: var(--muted); text-align: right; }
+
+  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: var(--r-sm); font-size: 14px; opacity: 0; transition: .2s; pointer-events: none; z-index: 30; max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (min-width: 600px) { .hero h1 { font-size: 32px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><img src="logo.png" alt="Triving"></div>
+    <span class="tag">현장 주문</span>
+  </header>
+
+  <main id="orderView">
+    <div class="hero">
+      <h1>제주 퍼즐 주문</h1>
+      <p>원하는 상품의 수량을 고르고 주문해 주세요.<br>세트로 담으면 최대 11,000원 할인돼요.</p>
+    </div>
+
+    <section>
+      <div class="sec-title"><h2>상품 선택</h2><span>수량을 직접 입력할 수도 있어요</span></div>
+      <div class="group-label">단품</div>
+      <div id="singles"></div>
+      <div class="group-label">세트</div>
+      <div id="sets"></div>
+      <div class="block" id="itemsBlock"><p class="errmsg">상품을 1개 이상 담거나, 대량 구매·기타 요청을 적어 주세요.</p></div>
+
+      <div class="extra" id="extraCard">
+        <button type="button" class="extra-head" id="extraToggle" aria-expanded="false">
+          <span>
+            <span class="extra-title">대량 구매 · 기타 요청</span>
+            <span class="extra-desc">단체 주문, 목록에 없는 구성, 희망 수량을 따로 적어 주세요</span>
+          </span>
+          <span class="plus" aria-hidden="true">+</span>
+        </button>
+        <div class="extra-body">
+          <textarea class="input" id="bulk" rows="3" placeholder="예) 랜드마크 시리즈 50개, 회사 기념품용 · 10월 20일까지 필요해요"></textarea>
+          <p class="hint">담당자가 연락드려 수량과 금액을 안내해 드려요. 위에서 담은 상품과 함께 주문할 수도 있어요.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="sec-title"><h2>주문자 정보</h2></div>
+      <div class="field" id="f-name">
+        <label class="l" for="name">이름<span class="req">*</span></label>
+        <input class="input" id="name" autocomplete="name" placeholder="홍길동">
+        <p class="errmsg">이름을 입력해 주세요.</p>
+      </div>
+      <div class="field" id="f-phone">
+        <label class="l" for="phone">연락처<span class="req">*</span></label>
+        <input class="input" id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-1234-5678">
+        <p class="errmsg">연락처를 정확히 입력해 주세요.</p>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="sec-title"><h2>수령 방법</h2></div>
+      <div class="block" id="b-receive">
+        <div class="chips">
+          <div class="chip"><input type="radio" name="receive" id="rc1" value="현장 수령" checked><label for="rc1">현장 수령<small>배송비 없음</small></label></div>
+          <div class="chip"><input type="radio" name="receive" id="rc2" value="택배 배송"><label for="rc2">택배 배송<small>3,000원 · 5만 원 초과 무료</small></label></div>
+        </div>
+      </div>
+      <div class="reveal" id="shipBox">
+        <div class="ship-progress"><div class="bar"><i id="shipBar"></i></div><p id="shipMsg"></p></div>
+        <div class="field" id="f-addr" style="margin-top:20px">
+          <label class="l">배송 주소<span class="req">*</span></label>
+          <div class="zip-row">
+            <input class="input" id="zip" placeholder="우편번호" inputmode="numeric" autocomplete="postal-code">
+            <button type="button" class="zip-btn" id="zipBtn">주소 찾기</button>
+          </div>
+          <input class="input" id="addr1" placeholder="기본 주소" autocomplete="address-line1" style="margin-top:8px">
+          <input class="input" id="addr2" placeholder="상세 주소 (동·호수 등)" autocomplete="address-line2" style="margin-top:8px">
+          <p class="errmsg">배송 주소를 입력해 주세요.</p>
+        </div>
+        <div id="postcodeLayer" class="postcode"></div>
+
+        <label class="same">
+          <input type="checkbox" id="sameAsOrderer" checked>
+          <span>받는 분이 주문자와 같아요</span>
+        </label>
+        <div class="reveal" id="recvBox">
+          <div class="field" id="f-rname">
+            <label class="l" for="rname">받는 분 이름<span class="req">*</span></label>
+            <input class="input" id="rname" placeholder="받는 분 이름">
+            <p class="errmsg">받는 분 이름을 입력해 주세요.</p>
+          </div>
+          <div class="field" id="f-rphone">
+            <label class="l" for="rphone">받는 분 연락처<span class="req">*</span></label>
+            <input class="input" id="rphone" type="tel" inputmode="numeric" placeholder="010-1234-5678">
+            <p class="errmsg">받는 분 연락처를 정확히 입력해 주세요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="sec-title"><h2>결제 방법</h2></div>
+      <div class="block" id="b-pay">
+        <div class="chips" style="--cols:3">
+          <div class="chip"><input type="radio" name="pay" id="p1" value="현금"><label for="p1">현금</label></div>
+          <div class="chip"><input type="radio" name="pay" id="p2" value="계좌이체"><label for="p2">계좌이체</label></div>
+          <div class="chip"><input type="radio" name="pay" id="p3" value="카드"><label for="p3">카드</label></div>
+        </div>
+        <p class="errmsg">결제 방법을 선택해 주세요.</p>
+      </div>
+      <div class="reveal" id="bankBox"><div class="note">입금 계좌 <b id="bankText"></b></div></div>
+      <div class="reveal" id="receiptBox">
+        <div class="field" style="margin-bottom:10px">
+          <label class="l">현금영수증</label>
+          <div class="chips" style="--cols:3">
+            <div class="chip"><input type="radio" name="receipt" id="r0" value="발급 안 함" checked><label for="r0">발급 안 함</label></div>
+            <div class="chip"><input type="radio" name="receipt" id="r1" value="소득공제"><label for="r1">소득공제<small>개인</small></label></div>
+            <div class="chip"><input type="radio" name="receipt" id="r2" value="지출증빙"><label for="r2">지출증빙<small>사업자</small></label></div>
+          </div>
+        </div>
+        <div class="field reveal" id="f-rno">
+          <input class="input" id="rno" inputmode="numeric" placeholder="휴대폰 번호">
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="sec-title"><h2>요청사항</h2><span>선택</span></div>
+      <div class="field">
+        <textarea class="input" id="memo" rows="3" placeholder="포장, 수령 시간 등 요청사항을 적어 주세요."></textarea>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="sec-title"><h2>주문 요약</h2></div>
+      <div class="receipt" id="summary"></div>
+      <div class="block" id="b-consent" style="margin-top:20px">
+        <label class="consent">
+          <input type="checkbox" id="consent">
+          <div>
+            <div class="t">개인정보 수집·이용에 동의합니다 (필수)</div>
+            <div class="d">수집 항목: 이름, 연락처, 배송 주소(택배 시)<br>이용 목적: 주문 확인 및 상품 전달<br>보유 기간: 행사 종료 후 3개월 뒤 파기</div>
+          </div>
+        </label>
+        <p class="errmsg">개인정보 수집·이용에 동의해 주세요.</p>
+      </div>
+    </section>
+  </main>
+
+  <main class="done" id="doneView">
+    <div class="check">✓</div>
+    <div class="order-no" id="orderNo"></div>
+    <h1>주문이 접수되었어요</h1>
+    <p>이 화면을 부스 직원에게 보여 주세요.</p>
+    <div class="receipt" id="receipt"></div>
+    <div class="note" id="doneBank" style="display:none"></div>
+    <button class="ghost" id="again">새 주문하기</button>
+  </main>
+</div>
+
+<div class="bottom" id="bottomBar">
+  <div class="in">
+    <div class="sum">
+      <div class="total" id="total">0원</div>
+      <div class="sub" id="sub">상품을 담아 주세요</div>
+    </div>
+    <button class="cta" id="submit" disabled>주문하기</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" async></script>
+
+<script>
+/* ===== 설정 ===== */
+const BANK_INFO = '기업은행 564-071799-04-010 (주식회사 비온)';
+const SHIPPING_FEE = 3000;
+const FREE_OVER = 50000; // 이 금액 "초과"면 무료배송
+
+// 주문은 구글 폼으로 접수돼요 (응답 → 구글 시트). 아래 값은 폼 질문의 내부 ID예요.
+const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScTtms9yz14WIV3c4wI_KU89QT5btpfC7-l9CQOMwmFMT7-cA/formResponse';
+const ENTRY = {
+  name: 'entry.533910785',
+  phone: 'entry.284731011',
+  items: 'entry.958599113',      // 체크박스 "주문하실 상품"
+  pay: 'entry.691306114',
+  receipt: 'entry.1478560033',
+  receiptNo: 'entry.126904590',
+  receive: 'entry.1559597124',
+  addr: 'entry.700281907',
+  memo: 'entry.1206218154',
+  consent: 'entry.305679515',
+};
+// 구글 폼 현금영수증 선택지 문구 (정확히 일치해야 해요)
+const RECEIPT_OPTION = { '발급 안 함': '발급 안 함', '소득공제': '소득공제용 (개인 · 휴대폰 번호)', '지출증빙': '지출증빙용 (사업자 · 사업자등록번호)' };
+// option: 구글 폼 체크박스 선택지 문구 (정확히 일치해야 해요) / entry: 상품별 수량 질문
+const PRODUCTS = [
+  { id: 'landmark', group: 'singles', name: '랜드마크 시리즈', price: 25000, entry: 'entry.897949582', option: '랜드마크 시리즈 · 25,000원' },
+  { id: 'camping', group: 'singles', name: '캠핑 퍼즐 시리즈 (제주)', price: 30000, entry: 'entry.114396092', option: '캠핑 퍼즐 시리즈 (제주) · 30,000원' },
+  { id: 'hallabong', group: 'singles', name: '한라봉', price: 15000, entry: 'entry.1024780336', option: '한라봉 · 15,000원' },
+  { id: 'set-ch', group: 'sets', name: '캠핑 + 한라봉', price: 40000, orig: 45000, entry: 'entry.366431961', option: '캠핑 + 한라봉 세트 · 40,000원 (5,000원 할인)' },
+  { id: 'set-lh', group: 'sets', name: '랜드마크 + 한라봉', price: 35000, orig: 40000, entry: 'entry.2092687025', option: '랜드마크 + 한라봉 세트 · 35,000원 (5,000원 할인)' },
+  { id: 'set-cl', group: 'sets', name: '캠핑 + 랜드마크', price: 49000, orig: 55000, entry: 'entry.1927632176', option: '캠핑 + 랜드마크 세트 · 49,000원 (6,000원 할인)' },
+  { id: 'set-all', group: 'sets', name: '전체 세트 (3종)', price: 59000, orig: 70000, entry: 'entry.2050167453', option: '전체 세트 (3종) · 59,000원 (11,000원 할인)' },
+];
+/* ===================================== */
+
+const won = n => n.toLocaleString('ko-KR') + '원';
+const $ = id => document.getElementById(id);
+const qty = Object.fromEntries(PRODUCTS.map(p => [p.id, 0]));
+const MAX = 999;
+
+function renderProducts() {
+  for (const p of PRODUCTS) {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.id = 'item-' + p.id;
+    const save = p.orig ? `<span class="orig">${won(p.orig)}</span><span class="badge">${won(p.orig - p.price)} 할인</span>` : '';
+    el.innerHTML = `
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="meta"><span class="price">${won(p.price)}</span>${save}</div>
+      </div>
+      <div class="stepper">
+        <button type="button" aria-label="${p.name} 빼기" data-d="-1">−</button>
+        <input type="number" inputmode="numeric" min="0" max="${MAX}" value="0" aria-label="${p.name} 수량">
+        <button type="button" aria-label="${p.name} 더하기" data-d="1">+</button>
+      </div>`;
+    const input = el.querySelector('input');
+    el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => setQty(p.id, qty[p.id] + Number(b.dataset.d))));
+    input.addEventListener('input', () => setQty(p.id, parseInt(input.value, 10) || 0, true));
+    input.addEventListener('blur', () => { input.value = qty[p.id]; });
+    input.addEventListener('focus', () => input.select());
+    $(p.group).appendChild(el);
+  }
+  PRODUCTS.forEach(p => setQty(p.id, 0));
+}
+
+function setQty(id, n, fromInput) {
+  n = Math.max(0, Math.min(MAX, n));
+  qty[id] = n;
+  const el = $('item-' + id);
+  const input = el.querySelector('input');
+  if (!fromInput) input.value = n;
+  el.querySelector('[data-d="-1"]').disabled = n === 0;
+  el.classList.toggle('on', n > 0);
+  update();
+}
+
+const receive = () => document.querySelector('input[name=receive]:checked').value;
+const pay = () => document.querySelector('input[name=pay]:checked')?.value;
+const receipt = () => document.querySelector('input[name=receipt]:checked').value;
+
+function totals() {
+  const goods = PRODUCTS.reduce((s, p) => s + p.price * qty[p.id], 0);
+  const count = PRODUCTS.reduce((s, p) => s + qty[p.id], 0);
+  const ship = receive() === '택배 배송' && goods > 0 && goods <= FREE_OVER ? SHIPPING_FEE : 0;
+  return { goods, count, ship, total: goods + ship };
+}
+
+const bulkText = () => $('bulk').value.trim();
+const hasOrder = t => t.count > 0 || bulkText().length > 0;
+
+function update() {
+  const t = totals();
+  const isShip = receive() === '택배 배송';
+  $('total').textContent = won(t.total);
+  $('sub').textContent = t.count === 0
+    ? (bulkText() ? '대량 구매 · 기타 요청 (금액 별도 안내)' : '상품을 담아 주세요')
+    : `상품 ${t.count}개 · ${won(t.goods)}` + (isShip ? ` · 배송비 ${t.ship ? won(t.ship) : '무료'}` : '') + (bulkText() ? ' · 기타 요청 있음' : '');
+  $('submit').disabled = !hasOrder(t);
+  $('recvBox').classList.toggle('show', isShip && !$('sameAsOrderer').checked);
+  renderSummary(t, isShip);
+
+  $('shipBox').classList.toggle('show', isShip);
+  $('shipBar').style.width = Math.min(100, t.goods / FREE_OVER * 100) + '%';
+  $('shipMsg').textContent = t.goods > FREE_OVER
+    ? '무료배송이 적용됐어요.'
+    : `상품 금액이 ${won(FREE_OVER)}을 넘으면 배송비가 무료예요. (현재 ${won(t.goods)})`;
+
+  const p = pay();
+  $('bankBox').classList.toggle('show', p === '계좌이체');
+  $('receiptBox').classList.toggle('show', p === '현금' || p === '계좌이체');
+  const r = receipt();
+  $('f-rno').classList.toggle('show', r !== '발급 안 함');
+  $('rno').placeholder = r.startsWith('지출') ? '사업자등록번호' : '휴대폰 번호';
+  if (hasOrder(t)) $('itemsBlock').classList.remove('err');
+}
+
+function renderSummary(t, isShip) {
+  const rows = PRODUCTS.filter(p => qty[p.id] > 0)
+    .map(p => `<div class="row"><span>${p.name} × ${qty[p.id]}</span><span>${won(p.price * qty[p.id])}</span></div>`).join('');
+  const bulk = bulkText() ? `<div class="row memo"><span>대량 · 기타 요청</span><span>금액 별도 안내</span></div>` : '';
+  if (!rows && !bulk) { $('summary').innerHTML = '<div class="empty">아직 담은 상품이 없어요</div>'; return; }
+  $('summary').innerHTML = rows + bulk +
+    (isShip ? `<div class="row"><span>배송비</span><span>${t.ship ? won(t.ship) : (t.goods ? '무료' : '-')}</span></div>` : '') +
+    `<div class="row total"><span>결제 금액</span><span>${won(t.total)}</span></div>`;
+}
+
+const phoneFormat = v => {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.startsWith('02')) return d.length < 3 ? d : d.length < 6 ? `${d.slice(0,2)}-${d.slice(2)}` : d.length < 10 ? `${d.slice(0,2)}-${d.slice(2,5)}-${d.slice(5)}` : `${d.slice(0,2)}-${d.slice(2,6)}-${d.slice(6)}`;
+  return d.length < 4 ? d : d.length < 8 ? `${d.slice(0,3)}-${d.slice(3)}` : d.length < 11 ? `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}` : `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`;
+};
+const phoneOk = v => /^0\d{1,2}-\d{3,4}-\d{4}$/.test(v);
+
+function openPostcode() {
+  if (!window.daum || !daum.Postcode) { toast('주소 찾기를 불러오지 못했어요. 직접 입력해 주세요.'); $('addr1').focus(); return; }
+  const layer = $('postcodeLayer');
+  layer.innerHTML = '';
+  layer.classList.add('show');
+  new daum.Postcode({
+    oncomplete: data => {
+      $('zip').value = data.zonecode;
+      $('addr1').value = data.roadAddress || data.jibunAddress;
+      layer.classList.remove('show');
+      $('f-addr').classList.remove('err');
+      $('addr2').focus();
+    },
+    width: '100%', height: '100%',
+  }).embed(layer);
+  layer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function fullAddress() {
+  const parts = [$('zip').value.trim() && `(${$('zip').value.trim()})`, $('addr1').value.trim(), $('addr2').value.trim()].filter(Boolean);
+  let s = parts.join(' ');
+  if (!$('sameAsOrderer').checked) s += ` / 받는 분: ${$('rname').value.trim()} ${$('rphone').value.trim()}`;
+  return s;
+}
+
+function setErr(id, on) { $(id).classList.toggle('err', on); return on; }
+
+function validate() {
+  const t = totals();
+  const ship = receive() === '택배 배송';
+  const other = ship && !$('sameAsOrderer').checked;
+  const errs = [
+    setErr('itemsBlock', !hasOrder(t)),
+    setErr('f-name', !$('name').value.trim()),
+    setErr('f-phone', !phoneOk($('phone').value.trim())),
+    setErr('f-addr', ship && (!$('addr1').value.trim() || !$('addr2').value.trim())),
+    setErr('f-rname', other && !$('rname').value.trim()),
+    setErr('f-rphone', other && !phoneOk($('rphone').value.trim())),
+    setErr('b-pay', !pay()),
+    setErr('b-consent', !$('consent').checked),
+  ];
+  const first = document.querySelector('.err');
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return !errs.some(Boolean);
+}
+
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+async function submit() {
+  if (!validate()) { toast('빠진 항목을 확인해 주세요.'); return; }
+  const btn = $('submit'); btn.disabled = true; btn.textContent = '접수 중…';
+  // 주문코드: 직원이 시트에서 손님 화면과 맞춰 볼 수 있게 요청사항 칸 맨 앞에 함께 저장해요.
+  const code = orderCode();
+  const f = new URLSearchParams();
+  f.append(ENTRY.name, $('name').value.trim());
+  f.append(ENTRY.phone, $('phone').value.trim());
+  PRODUCTS.filter(p => qty[p.id] > 0).forEach(p => { f.append(ENTRY.items, p.option); f.append(p.entry, String(qty[p.id])); });
+  f.append(ENTRY.pay, pay());
+  if (pay() !== '카드') {
+    f.append(ENTRY.receipt, RECEIPT_OPTION[receipt()]);
+    if (receipt() !== '발급 안 함') f.append(ENTRY.receiptNo, $('rno').value.trim());
+  }
+  f.append(ENTRY.receive, receive());
+  if (receive() === '택배 배송') f.append(ENTRY.addr, fullAddress());
+  f.append(ENTRY.memo, [`[주문코드 ${code}]`, bulkText() && `[대량·기타] ${bulkText()}`, $('memo').value.trim()].filter(Boolean).join('\n'));
+  f.append(ENTRY.consent, '동의합니다');
+  try {
+    // 구글 폼은 다른 사이트에서 응답 내용을 읽을 수 없게 막아 두어서(no-cors), 전송이 끝나면 접수된 것으로 봐요.
+    await fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: f });
+    showDone(code);
+  } catch (e) {
+    toast('접수에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+    btn.disabled = false; btn.textContent = '주문하기';
+  }
+}
+
+function orderCode() {
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const r = crypto.getRandomValues(new Uint8Array(4));
+  return Array.from(r, b => A[b % A.length]).join('');
+}
+
+function showDone(code) {
+  const t = totals();
+  const rows = PRODUCTS.filter(p => qty[p.id] > 0)
+    .map(p => `<div class="row"><span>${p.name} × ${qty[p.id]}</span><span>${won(p.price * qty[p.id])}</span></div>`).join('');
+  $('orderNo').textContent = '주문코드 ' + code;
+  $('receipt').innerHTML = `
+    <div class="row"><span>주문자</span><span>${escapeHtml($('name').value.trim())}</span></div>
+    <div class="row"><span>수령 · 결제</span><span>${receive()} · ${pay()}</span></div>
+    <div style="height:10px"></div>${rows}
+    ${bulkText() ? `<div class="row"><span>대량 · 기타 요청</span><span>금액 별도 안내</span></div>` : ''}
+    ${receive() === '택배 배송' ? `<div class="row"><span>배송비</span><span>${t.ship ? won(t.ship) : (t.goods ? '무료' : '-')}</span></div>` : ''}
+    <div class="row total"><span>결제 금액</span><span>${won(t.total)}</span></div>`;
+  const bank = $('doneBank');
+  if (pay() === '계좌이체') { bank.style.display = 'block'; bank.innerHTML = `입금 계좌 <b>${BANK_INFO}</b>`; }
+  $('orderView').style.display = 'none';
+  $('bottomBar').style.display = 'none';
+  $('doneView').classList.add('show');
+  window.scrollTo(0, 0);
+}
+
+function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+$('bankText').textContent = BANK_INFO;
+document.querySelectorAll('input[name=receive], input[name=pay], input[name=receipt]').forEach(i => i.addEventListener('change', update));
+['name', 'phone', 'rname', 'rphone'].forEach(id => $(id).addEventListener('input', () => $('f-' + id).classList.remove('err')));
+['phone', 'rphone'].forEach(id => $(id).addEventListener('input', e => { e.target.value = phoneFormat(e.target.value); }));
+['zip', 'addr1', 'addr2'].forEach(id => $(id).addEventListener('input', () => $('f-addr').classList.remove('err')));
+$('zipBtn').addEventListener('click', openPostcode);
+$('sameAsOrderer').addEventListener('change', update);
+$('bulk').addEventListener('input', update);
+$('extraToggle').addEventListener('click', () => {
+  const open = $('extraCard').classList.toggle('open');
+  $('extraToggle').setAttribute('aria-expanded', open);
+  if (open) $('bulk').focus();
+});
+document.querySelectorAll('input[name=pay]').forEach(i => i.addEventListener('change', () => $('b-pay').classList.remove('err')));
+$('consent').addEventListener('change', () => $('b-consent').classList.remove('err'));
+$('submit').addEventListener('click', submit);
+$('again').addEventListener('click', () => location.reload());
+renderProducts();
+</script>
+</body>
+</html>
